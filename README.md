@@ -2,65 +2,58 @@
 
 Warns and then closes issues and PRs that have had no activity for a specified amount of time.
 
-### Usage
+## Usage
 
-See [action.yml](./action.yml) For comprehensive list of options.
- 
-Basic:
-```
-name: "Close stale issues"
+### Arguments
+
+| Argument               | Example                           | Required | Description                                                                                               |
+|------------------------|-----------------------------------|----------|-----------------------------------------------------------------------------------------------------------|
+| GITHUB_TOKEN           | -                                 | Required | Available via environment variables                                                                       |
+| DRY_RUN                | true                              | Optional | Default: false. Execute the commands only to the console. No GitHub actions or Slack messages will be run |
+| STALE_ISSUE_MESSAGE    | 'Marking this issue as stale'     | Optional | If left empty, no issues will be marked as stale                                                          |
+| CLOSE_MESSSAGE         | 'Closing as stale'                | Optional |                                                                                                           |
+| STALE_PR_MESSAGE       | 'Marking this PR as stale'        | Optional | If left empty, no PRs will be marked as stale                                                             |
+| DAYS_BEFORE_STALE      | 20                                | Required | Days before an issue is marked as stale (e.g. 20 days after inactivity)                                   |
+| DAYS_BEFORE_CLOSE      | 10                                | Required | Days before an issue is closed (e.g. 30 days after inactivity, so 10 days after DAYS_BEFORE_STALE)        |
+| STALE_ISSUE_LABEL      | 'stale?'                          | Required | Name of the stale label. Must exist already.                                                              |
+| EXEMPT_ISSUE_LABELS    | ``` |   not stale   important ``` | Optional | Issues with these labels will stay untouched. Write in YAML syntax (with `|`) to get new line breaks.     |
+| STALE_PR_LABEL         | 'stale?'                          | Required | Name of the stale label. Must exist already.                                                              |
+| EXEMPT_PR_LABELS       | ``` |   not stale   important ``` | Required | PRs with these labels will stay untouched. Write in YAML syntax (with `|`) to get new line breaks.        |
+| OPERATIONS_PER_RUN     | 30                                | Required | The maximum number of operations per run, used to control rate limiting                                   |
+| SLACK_STALE_CHANNEL_ID | -                                 | Optional | ID of the channel the Bot should post to                                                                  |
+| SLACK_TOKEN            | -                                 | Optional |                                                                                                           |
+
+### Workflow Example
+
+```yaml
 on:
   schedule:
-  - cron: "0 0 * * *"
-
+    - cron: "0 */12 * * *"
+name: Run Stale Bot on Issue Comments
 jobs:
-  stale:
+  build:
+    name: stale
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v1
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Message to comment on stale issues. If none provided, will not mark issues stale'
-        stale-pr-message: 'Message to comment on stale PRs. If none provided, will not mark PRs stale'
+      - uses: actions/checkout@master
+      - name: stale
+        uses: gatsbyjs/stale@master
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
+          SLACK_STALE_CHANNEL_ID: ${{ secrets.SLACK_STALE_CHANNEL_ID }}
+          DAYS_BEFORE_STALE: 1
+          DAYS_BEFORE_CLOSE: 1
+          STALE_ISSUE_LABEL: 'stale?'
+          STALE_PR_LABEL: 'stale?'
+          OPERATIONS_PER_RUN: 30
+          STALE_ISSUE_MESSAGE: 'marking this as stale message'
+          CLOSE_MESSAGE: 'closing message'
+          EXEMPT_ISSUE_LABELS: |
+            not stale
+            important
 ```
- 
-Configure stale timeouts:
-```
-name: "Close stale issues"
-on:
-  schedule:
-  - cron: "0 0 * * *"
 
-jobs:
-  stale:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/stale@v1
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'This issue is stale because it has been open 30 days with no activity. Remove stale label or comment or this will be closed in 5 days'
-        days-before-stale: 30
-        days-before-close: 5
-```
- 
-Configure labels:
-```
-name: "Close stale issues"
-on:
-  schedule:
-  - cron: "0 0 * * *"
+### Notes
 
-jobs:
-  stale:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/stale@v1
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        stale-issue-message: 'Stale issue message'
-        stale-pr-message: 'Stale issue message'
-        stale-issue-label: 'no-issue-activity'
-        exempt-issue-label: 'awaiting-approval'
-        stale-pr-label: 'no-pr-activity'
-        exempt-pr-label: 'awaiting-approval'
-```
+In order to be able to see the results during `DRY_RUN` you need to set the secret `ACTIONS_STEP_DEBUG` to `true`. You can read more on [actions/toolkit documention](https://github.com/actions/toolkit/blob/4a3fe0bcd3ac34f58b226a326e6235a6fbf2fee0/docs/action-debugging.md#step-debug-logs).
