@@ -171,14 +171,6 @@ async function processIssues(
   return await processIssues(client, args, operationsLeft, page + 1)
 }
 
-/**
- * issueHasActivity - Check the issue's comments
- * @description List all comments, filter out comments from Bots. If the array is empty, no user activity is given during the time duration
- * @param client
- * @param issue
- * @param daysBeforeStale
- * @return When user comments can be found, return true. For an empty array, false.
- */
 async function issueHasActivity(
   client: github.GitHub,
   issue: Issue,

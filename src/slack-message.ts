@@ -1,6 +1,16 @@
 import { QueueType, ReportType } from "./types"
 
-const slackMessage = (queue: QueueType[]) => {
+/*
+Logic of this function is largely borrowed from:
+https://github.com/gatsbyjs/gatsby/blob/529dc1c6d345e048051757b27ced6a8e5e554ed8/.github/actions/high-priority-prs/src/pr-message.js
+ */
+
+/**
+ * Format a list of issues to Slack's block kit
+ * @see https://api.slack.com/tools/block-kit-builder
+ * @param queue
+ */
+const slackMessage = (queue: QueueType[]): ReportType[] => {
   const report: ReportType[] = [
     {
       type: "section",

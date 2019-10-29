@@ -2,3 +2,5 @@ __tests__/runner/*
 .idea
 node_modules
 lib
+.DS_Store
+.vscode
