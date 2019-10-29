@@ -20,6 +20,9 @@ function wasLastUpdatedBefore(issue: Issue, num_days: number): boolean {
   return millisSinceLastUpdated >= daysInMillis
 }
 
+// Since GitHub doesn't allow arrays in workflow files
+// You need to use YAML and | pipe
+// Therefore this function splits on new lines and creates an array
 function parseLabels(files: string): string[] {
   return files.split(/\r?\n/).reduce<string[]>(
     (acc, line) =>
@@ -31,6 +34,7 @@ function parseLabels(files: string): string[] {
   )
 }
 
+// GitHub converts booleans to strings ¯\_(ツ)_/¯
 function isTrue(input: string): boolean {
   return input === "true"
 }

@@ -52,7 +52,7 @@ async function run() {
         const slack = new WebClient(args.SLACK_TOKEN)
 
         const res = await slack.chat.postMessage({
-          text: ``,
+          text: ``, // text is required, so pass empty string
           channel: args.SLACK_STALE_CHANNEL_ID,
           blocks: report,
         })
@@ -176,6 +176,7 @@ async function issueHasActivity(
   issue: Issue,
   daysBeforeStale: number
 ): Promise<boolean> {
+  // Should also work for PRs since GitHub internally treats PRs like "issues"
   const comments = await client.issues.listComments({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
@@ -183,6 +184,7 @@ async function issueHasActivity(
     since: subtractDays(daysBeforeStale),
   })
 
+  // GitHub's API gives back "User" or "Bot" for the type
   const filtered = comments.data.filter(comment => comment.user.type === "User")
 
   return filtered.length > 0
@@ -212,7 +214,7 @@ async function addStaleLabel(
       labels: [staleLabel],
     })
 
-    return 2
+    return 2 // Number of operations performed
   } else {
     return 0
   }
