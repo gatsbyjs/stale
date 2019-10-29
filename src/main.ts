@@ -1,7 +1,6 @@
 import * as core from "@actions/core"
 import * as github from "@actions/github"
 import * as Octokit from "@octokit/rest"
-import { WebClient } from "@slack/web-api"
 
 import {
   subtractDays,
@@ -28,8 +27,6 @@ type Args = {
   STALE_PR_LABEL: string
   EXEMPT_PR_LABELS: string[]
   OPERATIONS_PER_RUN: number
-  SLACK_STALE_CHANNEL_ID: string
-  SLACK_TOKEN: string
 }
 
 let queue: QueueType[] = []
@@ -45,28 +42,13 @@ async function run() {
     const client = new github.GitHub(args.GITHUB_TOKEN)
     await processIssues(client, args, args.OPERATIONS_PER_RUN)
 
-    if (args.SLACK_STALE_CHANNEL_ID) {
-      const report = slackMessage(queue)
+    // Export "blocks" as an output so that a follow-up Slack Action can use it
+    const blocks = slackMessage(queue)
+    // The quotes inside of blocks need to be escaped as GitHub doesn't do that or has a possibility to do that!
+    core.setOutput("blocks", JSON.stringify(blocks).replace(/"/g, '\\"'))
 
-      if (!args.DRY_RUN) {
-        const slack = new WebClient(args.SLACK_TOKEN)
-
-        const res = await slack.chat.postMessage({
-          text: ``, // text is required, so pass empty string
-          channel: args.SLACK_STALE_CHANNEL_ID,
-          blocks: report,
-        })
-
-        if (!res.ok) {
-          throw new Error(res.error)
-        }
-      } else {
-        core.debug(`Message to Slack:`)
-        core.debug(JSON.stringify(report, null, 2))
-      }
-    } else {
-      core.debug(`You have no SLACK_STALE_CHANNEL_ID defined`)
-    }
+    // Export an array of objects containing issues (URL and title) so that people can process it into their own format
+    core.setOutput("queue", JSON.stringify(queue))
   } catch (error) {
     core.error(error)
     core.setFailed(error.message)
@@ -300,8 +282,6 @@ function getAndValidateArgs(): Args {
     OPERATIONS_PER_RUN: parseInt(
       core.getInput("OPERATIONS_PER_RUN", { required: true })
     ),
-    SLACK_STALE_CHANNEL_ID: core.getInput("SLACK_STALE_CHANNEL_ID"),
-    SLACK_TOKEN: core.getInput("SLACK_TOKEN"),
   }
 
   for (const numberInput of [

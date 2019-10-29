@@ -41,10 +41,11 @@ inputs:
     description: 'The maximum number of operations per run, used to control rate limiting'
     required: true
     default: 30
-  SLACK_STALE_CHANNEL_ID:
-    description: 'ID of the channel the bot should post to'
-  SLACK_TOKEN:
-    description: 'Your Slack app token'
+outputs:
+  blocks:
+    description: 'Array of objects in the specific format that Slack API requires it, see: https://api.slack.com/tools/block-kit-builder'
+  queue:
+    description: 'Array of objects of the issues (URL and title) so that you can convert it into your own desired format'
 runs:
   using: 'docker'
   image: 'Dockerfile'

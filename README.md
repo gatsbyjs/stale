@@ -10,7 +10,7 @@ Additional features:
 - Removes the stale label after activity in the marked issue
 - Add a message when closing an issue
 - DRY run (only logging, no actions)
-- Slack Bot to post a summary of all closed issues to a channel
+- Two outputs (`blocks` and `queue`) which can be used for a Slack action or passed to your own action. These outputs list the closed issues after each run
 
 ## Usage
 
@@ -30,12 +30,12 @@ Additional features:
 | STALE_PR_LABEL         | 'stale?'                          | Required | Name of the stale label. Must exist already.                                                              |
 | EXEMPT_PR_LABELS       | ``` |   not stale   important ``` | Required | PRs with these labels will stay untouched. Write in YAML syntax (with `|`) to get new line breaks.        |
 | OPERATIONS_PER_RUN     | 30                                | Required | The maximum number of operations per run, used to control rate limiting                                   |
-| SLACK_STALE_CHANNEL_ID | -                                 | Optional | ID of the channel the Bot should post to                                                                  |
-| SLACK_TOKEN            | -                                 | Optional |                                                                                                           |
 
-### Workflow Example
+### Workflow Examples
 
-The secret `GITHUB_TOKEN` is automatically available, however the other two secrets need to be set in your "Secrets" tab under "Settings".
+The secret `GITHUB_TOKEN` is automatically available, however other secrets need to be set in your "Secrets" tab under "Settings".
+
+#### Basic
 
 ```yaml
 on:
@@ -52,10 +52,8 @@ jobs:
         uses: gatsbyjs/stale@master
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SLACK_TOKEN: ${{ secrets.SLACK_TOKEN }}
-          SLACK_STALE_CHANNEL_ID: ${{ secrets.SLACK_STALE_CHANNEL_ID }}
-          DAYS_BEFORE_STALE: 1
-          DAYS_BEFORE_CLOSE: 1
+          DAYS_BEFORE_STALE: 20
+          DAYS_BEFORE_CLOSE: 10
           STALE_ISSUE_LABEL: 'stale?'
           STALE_PR_LABEL: 'stale?'
           OPERATIONS_PER_RUN: 30
@@ -65,6 +63,45 @@ jobs:
             not stale
             important
 ```
+
+#### Slack
+
+In addition to running the stale bot you can also send a list of closed issues via a bot to a Slack channel. For that the stale action exposes a `blocks` output which has the correct format of [Slack's block kit](https://api.slack.com/tools/block-kit-builder).
+
+We'd recommend the action [Post Slack messages](https://github.com/marketplace/actions/post-slack-message) as it uses a Slack bot token (and not e.g. a webhook).
+
+```yaml
+on:
+  schedule:
+    - cron: "0 */12 * * *"
+name: Run Stale Bot on Issue Comments
+jobs:
+  build:
+    name: stale
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: stale
+        id: stale
+        uses: gatsbyjs/stale@master
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DAYS_BEFORE_STALE: 20
+          DAYS_BEFORE_CLOSE: 10
+          STALE_ISSUE_MESSAGE: 'marking this as stale'
+          CLOSE_MESSAGE: 'closing this issue'
+          EXEMPT_ISSUE_LABELS: |
+            not stale
+            important
+      - name: Post slack report
+        uses: pullreminders/slack-action@v1.0.7
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_TOKEN }}
+        with:
+          args: '{\"channel\": \"${{ secrets.SLACK_STALE_CHANNEL_ID }}\", \"text\": \"\", \"blocks\": ${{ steps.stale.outputs.blocks }} }'
+```
+
+It's important that you give the stale action an `id` so that you can reference its output via `steps.<your-id>.outputs.blocks`.
 
 ### Notes
 
