@@ -1,5 +1,5 @@
 {
-  "name": "stale-action",
+  "name": "gatsbyjs-stale-action",
   "version": "1.0.0",
   "private": true,
   "description": "Marks old issues and PRs as stale",
@@ -11,14 +11,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/stale.git"
+    "url": "git+https://github.com/gatsbyjs/stale.git"
   },
   "keywords": [
     "actions",
     "node",
     "stale"
   ],
-  "author": "GitHub",
+  "author": "LekoArts <lekoarts@gmail.com>",
+  "contributors": ["GitHub"],
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.2.0",

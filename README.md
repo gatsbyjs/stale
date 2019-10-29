@@ -2,6 +2,16 @@
 
 Warns and then closes issues and PRs that have had no activity for a specified amount of time.
 
+Based on [`actions/stale`](https://github.com/actions/stale).
+
+Additional features:
+
+- Multiple exempt labels
+- Removes the stale label after activity in the marked issue
+- Add a message when closing an issue
+- DRY run (only logging, no actions)
+- Slack Bot to post a summary of all closed issues to a channel
+
 ## Usage
 
 ### Arguments
@@ -24,6 +34,8 @@ Warns and then closes issues and PRs that have had no activity for a specified a
 | SLACK_TOKEN            | -                                 | Optional |                                                                                                           |
 
 ### Workflow Example
+
+The secret `GITHUB_TOKEN` is automatically available, however the other two secrets need to be set in your "Secrets" tab under "Settings".
 
 ```yaml
 on:
@@ -57,3 +69,17 @@ jobs:
 ### Notes
 
 In order to be able to see the results during `DRY_RUN` you need to set the secret `ACTIONS_STEP_DEBUG` to `true`. You can read more on [actions/toolkit documention](https://github.com/actions/toolkit/blob/4a3fe0bcd3ac34f58b226a326e6235a6fbf2fee0/docs/action-debugging.md#step-debug-logs).
+
+## Example of Slack bot output
+
+The bot will post a similar message to your channel (the titles are links to the respective issue):
+
+```
+Hi, this is your friendly Stale Action BOT with the latest closed issues
+
+[3] Issues were closed
+
+1. test 08
+2. Test 07
+3. test 03
+```
