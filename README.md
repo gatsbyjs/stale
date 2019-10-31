@@ -26,9 +26,9 @@ Additional features:
 | DAYS_BEFORE_STALE      | 20                                | Required | Days before an issue is marked as stale (e.g. 20 days after inactivity)                                   |
 | DAYS_BEFORE_CLOSE      | 10                                | Required | Days before an issue is closed (e.g. 30 days after inactivity, so 10 days after DAYS_BEFORE_STALE)        |
 | STALE_ISSUE_LABEL      | 'stale?'                          | Required | Name of the stale label. Must exist already.                                                              |
-| EXEMPT_ISSUE_LABELS    | see "Workflow Examples" | Optional | Issues with these labels will stay untouched. Write in YAML syntax (with `|`) to get new line breaks.     |
+| EXEMPT_ISSUE_LABELS    | see "Workflow Examples" | Optional | Issues with these labels will stay untouched. Write in YAML syntax to get new line breaks.     |
 | STALE_PR_LABEL         | 'stale?'                          | Required | Name of the stale label. Must exist already.                                                              |
-| EXEMPT_PR_LABELS       | see "Workflow Examples" | Required | PRs with these labels will stay untouched. Write in YAML syntax (with `|`) to get new line breaks.        |
+| EXEMPT_PR_LABELS       | see "Workflow Examples" | Required | PRs with these labels will stay untouched. Write in YAML syntax to get new line breaks.        |
 | OPERATIONS_PER_RUN     | 30                                | Required | The maximum number of operations per run, used to control rate limiting                                   |
 
 ### Workflow Examples
