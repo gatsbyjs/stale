@@ -40,7 +40,7 @@ The secret `GITHUB_TOKEN` is automatically available, however other secrets need
 ```yaml
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 12 * * *"
 name: Run Stale Bot on Issue Comments
 jobs:
   build:
@@ -73,7 +73,7 @@ We'd recommend the action [Post Slack messages](https://github.com/marketplace/a
 ```yaml
 on:
   schedule:
-    - cron: "0 */12 * * *"
+    - cron: "0 12 * * *"
 name: Run Stale Bot on Issue Comments
 jobs:
   build:
