@@ -7,8 +7,8 @@ import {
   wasLastUpdatedBefore,
   isLabeled,
   parseLabels,
-  isTrue,
-} from "./utils"
+  isTrue, getDateOfLastAppliedStaleLabel
+} from './utils'
 import slackMessage from "./slack-message"
 import { QueueType } from "./types"
 
@@ -109,6 +109,35 @@ async function processIssues(
     if (exemptLabels.some(exemptLabel => isLabeled(issue, exemptLabel))) {
       continue
     } else if (isLabeled(issue, staleLabel)) {
+      // when to close issue
+      // when to remove stale label
+
+      const dateOfStaleLabelApplication = await getDateOfLastAppliedStaleLabel(client, issue, staleLabel)
+      // getDateOfLastAppliedStaleLabel might make more than 1 operation
+      operationsLeft -= 1
+
+      const wasThereUserActivitySinceThat = await issueHasActivitySinceStaleLabelWasApplied(client, issue, dateOfStaleLabelApplication)
+      operationsLeft -= 1
+
+      if (!wasThereUserActivitySinceThat && (+new Date() - +new Date(dateOfStaleLabelApplication) / (1000 * 3600 * 24) >= args.DAYS_BEFORE_CLOSE )) {
+        // close
+        operationsLeft -= await closeIssue(
+          client,
+          issue,
+          args.CLOSE_MESSAGE,
+          args.DRY_RUN
+        )
+      } else if (wasThereUserActivitySinceThat) {
+        // remove label
+        operationsLeft -= await removeStaleLabel(
+          client,
+          issue,
+          staleLabel,
+          args.DRY_RUN
+        )
+      }
+
+/*
       // Check if the staleLabel is present & the last update is longer than the close days. If yes, close the issue
       if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_CLOSE)) {
         operationsLeft -= await closeIssue(
@@ -131,7 +160,7 @@ async function processIssues(
       } else {
         operationsLeft -= 1
         continue
-      }
+      }*/
     } else if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_STALE)) {
       // Check if the last update on the issue is longer than the stale days. If yes, mark the issue stale
       operationsLeft -= await addStaleLabel(
@@ -153,17 +182,17 @@ async function processIssues(
   return await processIssues(client, args, operationsLeft, page + 1)
 }
 
-async function issueHasActivity(
+async function issueHasActivitySinceStaleLabelWasApplied(
   client: github.GitHub,
   issue: Issue,
-  daysBeforeStale: number
+  staleLabelAppliedData: string,
 ): Promise<boolean> {
   // Should also work for PRs since GitHub internally treats PRs like "issues"
   const comments = await client.issues.listComments({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
     issue_number: issue.number,
-    since: subtractDays(daysBeforeStale),
+    since: staleLabelAppliedData,
   })
 
   // GitHub's API gives back "User" or "Bot" for the type
