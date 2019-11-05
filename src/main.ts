@@ -313,10 +313,10 @@ function getAndValidateArgs(): Args {
     STALE_ISSUE_MESSAGE: core.getInput("STALE_ISSUE_MESSAGE"),
     CLOSE_MESSAGE: core.getInput("CLOSE_MESSAGE"),
     STALE_PR_MESSAGE: core.getInput("STALE_PR_MESSAGE"),
-    DAYS_BEFORE_STALE: parseInt(
+    DAYS_BEFORE_STALE: parseFloat(
       core.getInput("DAYS_BEFORE_STALE", { required: true })
     ),
-    DAYS_BEFORE_CLOSE: parseInt(
+    DAYS_BEFORE_CLOSE: parseFloat(
       core.getInput("DAYS_BEFORE_CLOSE", { required: true })
     ),
     STALE_ISSUE_LABEL: core.getInput("STALE_ISSUE_LABEL", { required: true }),
