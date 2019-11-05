@@ -109,6 +109,11 @@ async function processIssues(
     if (exemptLabels.some(exemptLabel => isLabeled(issue, exemptLabel))) {
       continue
     } else if (isLabeled(issue, staleLabel)) {
+      core.debug(
+        `${
+          isPr ? "pr" : "issue"
+        } has stale label`
+      )
       // when to close issue
       // when to remove stale label
 
@@ -161,16 +166,26 @@ async function processIssues(
         operationsLeft -= 1
         continue
       }*/
-    } else if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_STALE)) {
-      // Check if the last update on the issue is longer than the stale days. If yes, mark the issue stale
-      operationsLeft -= await addStaleLabel(
-        client,
-        issue,
-        staleMessage,
-        staleLabel,
-        args.DRY_RUN
+    } else {
+      core.debug(
+        `${
+          isPr ? "pr" : "issue"
+        } checking if should apply stale label`
       )
+
+      if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_STALE)) {
+
+        // Check if the last update on the issue is longer than the stale days. If yes, mark the issue stale
+        operationsLeft -= await addStaleLabel(
+          client,
+          issue,
+          staleMessage,
+          staleLabel,
+          args.DRY_RUN
+        )
+      }
     }
+
 
     if (operationsLeft <= 0) {
       core.warning(

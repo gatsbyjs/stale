@@ -1,5 +1,6 @@
 import * as Octokit from "@octokit/rest"
 import * as github from "@actions/github"
+import * as core from "@actions/core"
 
 type Issue = Octokit.IssuesListForRepoResponseItem
 type IssueLabel = Octokit.IssuesListForRepoResponseItemLabelsItem
@@ -18,6 +19,14 @@ function wasLastUpdatedBefore(issue: Issue, num_days: number): boolean {
   const daysInMillis = 1000 * 60 * 60 * 24 * num_days
   const millisSinceLastUpdated =
     new Date().getTime() - new Date(issue.updated_at).getTime()
+
+  core.debug(
+    `${
+      "issue"
+    } millisSinceLastUpdated=${millisSinceLastUpdated} daysInMillis=${daysInMillis} num_days=${num_days}`
+  )
+
+
   return millisSinceLastUpdated >= daysInMillis
 }
 
