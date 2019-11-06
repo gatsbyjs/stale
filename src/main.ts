@@ -3,12 +3,13 @@ import * as github from "@actions/github"
 import * as Octokit from "@octokit/rest"
 
 import {
-  subtractDays,
   wasLastUpdatedBefore,
+  appliedLabelBefore,
   isLabeled,
   parseLabels,
-  isTrue, getDateOfLastAppliedStaleLabel
-} from './utils'
+  isTrue,
+  getDateOfLastAppliedStaleLabel,
+} from "./utils"
 import slackMessage from "./slack-message"
 import { QueueType } from "./types"
 
@@ -109,83 +110,53 @@ async function processIssues(
     if (exemptLabels.some(exemptLabel => isLabeled(issue, exemptLabel))) {
       continue
     } else if (isLabeled(issue, staleLabel)) {
-      core.debug(
-        `${
-          isPr ? "pr" : "issue"
-        } has stale label`
+      // Check all events on the issue and get the date of the latest stale label application
+      const dateOfStaleLabelApplication = await getDateOfLastAppliedStaleLabel(
+        client,
+        issue,
+        staleLabel
       )
-      // when to close issue
-      // when to remove stale label
-
-      const dateOfStaleLabelApplication = await getDateOfLastAppliedStaleLabel(client, issue, staleLabel)
       // getDateOfLastAppliedStaleLabel might make more than 1 operation
       operationsLeft -= 1
 
-      const wasThereUserActivitySinceThat = await issueHasActivitySinceStaleLabelWasApplied(client, issue, dateOfStaleLabelApplication)
+      // Check if a user commented since that stale label application
+      const wasThereUserActivitySinceThat = await issueHasActivitySinceStaleLabelWasApplied(
+        client,
+        issue,
+        dateOfStaleLabelApplication
+      )
       operationsLeft -= 1
 
-      if (!wasThereUserActivitySinceThat && (+new Date() - +new Date(dateOfStaleLabelApplication) / (1000 * 3600 * 24) >= args.DAYS_BEFORE_CLOSE )) {
-        // close
-        operationsLeft -= await closeIssue(
-          client,
-          issue,
-          args.CLOSE_MESSAGE,
-          args.DRY_RUN
-        )
-      } else if (wasThereUserActivitySinceThat) {
-        // remove label
-        operationsLeft -= await removeStaleLabel(
-          client,
-          issue,
-          staleLabel,
-          args.DRY_RUN
-        )
-      }
-
-/*
-      // Check if the staleLabel is present & the last update is longer than the close days. If yes, close the issue
-      if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_CLOSE)) {
-        operationsLeft -= await closeIssue(
-          client,
-          issue,
-          args.CLOSE_MESSAGE,
-          args.DRY_RUN
-        )
-        // If a user commented since the addition of the stale label, remove the label
-      } else if (
-        await issueHasActivity(client, issue, args.DAYS_BEFORE_STALE)
+      // When there was no activity on the issue and the stale label application is longer than the close days, close the issue
+      if (
+        !wasThereUserActivitySinceThat &&
+        appliedLabelBefore(dateOfStaleLabelApplication, args.DAYS_BEFORE_CLOSE)
       ) {
-        operationsLeft -= 1
+        operationsLeft -= await closeIssue(
+          client,
+          issue,
+          args.CLOSE_MESSAGE,
+          args.DRY_RUN
+        )
+        // If there was activity, remove the stale label
+      } else if (wasThereUserActivitySinceThat) {
         operationsLeft -= await removeStaleLabel(
           client,
           issue,
           staleLabel,
           args.DRY_RUN
         )
-      } else {
-        operationsLeft -= 1
-        continue
-      }*/
-    } else {
-      core.debug(
-        `${
-          isPr ? "pr" : "issue"
-        } checking if should apply stale label`
-      )
-
-      if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_STALE)) {
-
-        // Check if the last update on the issue is longer than the stale days. If yes, mark the issue stale
-        operationsLeft -= await addStaleLabel(
-          client,
-          issue,
-          staleMessage,
-          staleLabel,
-          args.DRY_RUN
-        )
       }
+    } else if (wasLastUpdatedBefore(issue, args.DAYS_BEFORE_STALE)) {
+      // Check if the last update on the issue is longer than the stale days. If yes, mark the issue stale
+      operationsLeft -= await addStaleLabel(
+        client,
+        issue,
+        staleMessage,
+        staleLabel,
+        args.DRY_RUN
+      )
     }
-
 
     if (operationsLeft <= 0) {
       core.warning(
@@ -200,7 +171,7 @@ async function processIssues(
 async function issueHasActivitySinceStaleLabelWasApplied(
   client: github.GitHub,
   issue: Issue,
-  staleLabelAppliedData: string,
+  staleLabelAppliedData: string
 ): Promise<boolean> {
   // Should also work for PRs since GitHub internally treats PRs like "issues"
   const comments = await client.issues.listComments({

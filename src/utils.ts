@@ -1,13 +1,9 @@
 import * as Octokit from "@octokit/rest"
 import * as github from "@actions/github"
-import * as core from "@actions/core"
+import { Event } from "./types"
 
 type Issue = Octokit.IssuesListForRepoResponseItem
 type IssueLabel = Octokit.IssuesListForRepoResponseItemLabelsItem
-
-function subtractDays(days: number, date: Date = new Date()): string {
-  return new Date(+date - 1000 * 60 * 60 * 24 * days).toISOString()
-}
 
 function isLabeled(issue: Issue, label: string): boolean {
   const labelComparer: (l: IssueLabel) => boolean = l =>
@@ -15,17 +11,21 @@ function isLabeled(issue: Issue, label: string): boolean {
   return issue.labels.filter(labelComparer).length > 0
 }
 
+function appliedLabelBefore(
+  dateOfLabelApplication: string,
+  num_days: number
+): boolean {
+  return (
+    +new Date() - +new Date(dateOfLabelApplication) / (1000 * 3600 * 24) >=
+    num_days
+  )
+}
+
 function wasLastUpdatedBefore(issue: Issue, num_days: number): boolean {
+  // .getTme() returns the time in milliseconds and is bigger the more time that passed
   const daysInMillis = 1000 * 60 * 60 * 24 * num_days
   const millisSinceLastUpdated =
     new Date().getTime() - new Date(issue.updated_at).getTime()
-
-  core.debug(
-    `${
-      "issue"
-    } millisSinceLastUpdated=${millisSinceLastUpdated} daysInMillis=${daysInMillis} num_days=${num_days}`
-  )
-
 
   return millisSinceLastUpdated >= daysInMillis
 }
@@ -49,27 +49,31 @@ function isTrue(input: string): boolean {
   return input === "true"
 }
 
-async function getDateOfLastAppliedStaleLabel(client: github.GitHub, issue:Issue, staleLabel) {
-  const events = await getEvents(client, issue)
+async function getDateOfLastAppliedStaleLabel(
+  client: github.GitHub,
+  issue: Issue,
+  staleLabel: string
+): Promise<string> {
+  const events: Event[] = await getEvents(client, issue)
   const reversedEvents = events.reverse()
 
-  // @ts-ignore
-  const staleLabeledEvent = reversedEvents.find(event => event.event === 'labeled' && event.label.name === staleLabel)
-  // @ts-ignore
-  return staleLabeledEvent.created_at
+  const staleLabeledEvent = reversedEvents.find(
+    event => event.event === "labeled" && event.label!.name === staleLabel
+  )
+
+  return staleLabeledEvent!.created_at
 }
 
 async function getEvents(
   client: github.GitHub,
-  issue: Issue,
-): Promise<[]> {
+  issue: Issue
+): Promise<Octokit.IssuesListEventsResponse> {
   let page = 1
-  let results = []
-  let hasNextPage  = true
+  let results = [] as Octokit.IssuesListEventsResponse
+  let hasNextPage = true
 
-  while(hasNextPage) {
-
-    const res = await client.issues.listEvents({
+  while (hasNextPage) {
+    const { data, headers } = await client.issues.listEvents({
       owner: github.context.repo.owner,
       repo: github.context.repo.repo,
       per_page: 100,
@@ -77,14 +81,19 @@ async function getEvents(
       page,
     })
 
-    // @ts-ignore
-    results = results.concat(res.data)
-    hasNextPage = !!(res.headers.link && res.headers.link.includes(`rel="next"`))
+    results = results.concat(data)
+    hasNextPage = !!(headers.link && headers.link.includes(`rel="next"`))
     page++
   }
 
-  // @ts-ignore
   return results
 }
 
-export { subtractDays, isLabeled, wasLastUpdatedBefore, parseLabels, isTrue, getDateOfLastAppliedStaleLabel }
+export {
+  appliedLabelBefore,
+  isLabeled,
+  wasLastUpdatedBefore,
+  parseLabels,
+  isTrue,
+  getDateOfLastAppliedStaleLabel,
+}

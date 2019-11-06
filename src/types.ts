@@ -1,3 +1,5 @@
+import * as Octokit from "@octokit/rest"
+
 type QueueType = {
   url: string
   title: string
@@ -11,4 +13,11 @@ type ReportType = {
   }
 }
 
-export { QueueType, ReportType }
+interface Event extends Octokit.IssuesListEventsResponseItem {
+  label?: {
+    name: string
+    color: string
+  }
+}
+
+export { QueueType, ReportType, Event }
