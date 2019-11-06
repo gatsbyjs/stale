@@ -68,25 +68,15 @@ async function getEvents(
   client: github.GitHub,
   issue: Issue
 ): Promise<Octokit.IssuesListEventsResponse> {
-  let page = 1
-  let results = [] as Octokit.IssuesListEventsResponse
-  let hasNextPage = true
+  // per_page: 100 is the maximum
+  const options = client.issues.listEvents.endpoint.merge({
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
+    per_page: 100,
+    issue_number: issue.number,
+  })
 
-  while (hasNextPage) {
-    const { data, headers } = await client.issues.listEvents({
-      owner: github.context.repo.owner,
-      repo: github.context.repo.repo,
-      per_page: 100,
-      issue_number: issue.number,
-      page,
-    })
-
-    results = results.concat(data)
-    hasNextPage = !!(headers.link && headers.link.includes(`rel="next"`))
-    page++
-  }
-
-  return results
+  return await client.paginate(options)
 }
 
 export {
