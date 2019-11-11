@@ -46,7 +46,8 @@ async function run() {
     // Export "blocks" as an output so that a follow-up Slack Action can use it
     const blocks = slackMessage(queue)
     // The quotes inside of blocks need to be escaped as GitHub doesn't do that or has a possibility to do that!
-    core.setOutput("blocks", JSON.stringify(blocks).replace(/"/g, '\\"'))
+    const blocksEscaped = JSON.stringify(JSON.stringify(blocks))
+    core.setOutput("blocks", blocksEscaped)
 
     // Export an array of objects containing issues (URL and title) so that people can process it into their own format
     core.setOutput("queue", JSON.stringify(queue))
