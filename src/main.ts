@@ -50,7 +50,7 @@ async function run() {
       "blocks",
       JSON.stringify(blocks)
         .replace(/"/g, '\\"')
-        .replace(/\\\\"/g, '&#34;')
+        .replace(/\\\\"/g, "'")
     )
 
     // Export an array of objects containing issues (URL and title) so that people can process it into their own format
