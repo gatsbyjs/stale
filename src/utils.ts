@@ -16,7 +16,7 @@ function appliedLabelBefore(
   num_days: number
 ): boolean {
   return (
-    +new Date() - +new Date(dateOfLabelApplication) / (1000 * 3600 * 24) >=
+    (+new Date() - +new Date(dateOfLabelApplication)) / (1000 * 3600 * 24) >=
     num_days
   )
 }
