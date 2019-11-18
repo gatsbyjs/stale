@@ -32,6 +32,8 @@ type Args = {
 
 let queue: QueueType[] = []
 
+let issuesCount = 0
+
 async function run() {
   try {
     const args = getAndValidateArgs()
@@ -42,6 +44,8 @@ async function run() {
 
     const client = new github.GitHub(args.GITHUB_TOKEN)
     await processIssues(client, args, args.OPERATIONS_PER_RUN)
+
+    core.debug(`Total amount of issues: ${issuesCount}`)
 
     // Export "blocks" as an output so that a follow-up Slack Action can use it
     const blocks = slackMessage(queue)
@@ -85,6 +89,10 @@ async function processIssues(
     core.debug(
       `found issue: "${issue.title}" (#${issue.number}) ― last updated: ${issue.updated_at}`
     )
+
+    // Count the amount of issues that the bot went through (sanity check if all open issues were tested)
+    issuesCount++
+
     let isPr = !!issue.pull_request
 
     // If no stale message for issue/PR is defined, skip it
