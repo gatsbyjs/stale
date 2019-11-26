@@ -1,3 +1,7 @@
-node_modules/
-lib/
 __tests__/runner/*
+.idea
+node_modules
+lib
+.DS_Store
+.vscode
+temp.js
